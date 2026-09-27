@@ -1,5 +1,5 @@
-// Dữ liệu mẫu dùng chung cho toàn bộ 5 Giờ — đúng tinh thần "cho sẵn trong data.js"
-// của tài liệu, để không phải nhập liệu tay, chỉ tập trung vào LAYOUT.
+// Dữ liệu mẫu dùng chung cho toàn bộ các Giờ — để không phải nhập liệu tay,
+// chỉ tập trung vào LAYOUT.
 
 export interface Book {
   id: number;
@@ -91,6 +91,7 @@ export interface CartItem {
   quantity: number;
 }
 
+// Giỏ hàng mẫu dùng sẵn cho Giờ 5 — Bài tập 2 (Cart Screen)
 export const CART_ITEMS: CartItem[] = [
   { book: BOOKS[0], quantity: 2 },
   { book: BOOKS[1], quantity: 1 },

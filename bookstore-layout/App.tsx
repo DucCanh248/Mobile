@@ -1,44 +1,89 @@
-// TỔNG HỢP GIỜ 1 + 2 + 3 — Màn hình Trang chủ BookStore
-// Thứ tự: Header (cố định trên cùng) -> ScrollView (Category Chips + Book Grid) -> Floating Cart Button (nổi ngoài ScrollView)
+// TỔNG HỢP GIỜ 4 + GIỜ 5 — Home, Book Detail, Cart, Tab Bar
+// Chưa dùng thư viện navigation thật: chuyển "màn hình" bằng useState,
+// đúng yêu cầu "toàn bộ bài tập chỉ tập trung vào layout tĩnh (UI)".
 import React, { useState } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
-import { Header } from "./components/Header";
-import { CategoryChips } from "./components/CategoryChips";
-import { BookGrid } from "./components/BookGrid";
-import { FloatingCartButton } from "./components/FloatingCartButton";
-import { BOOKS } from "./data";
+import { View, Text, SafeAreaView, StyleSheet } from "react-native";
+import { TabBar, TabKey } from "./components/TabBar";
+import { HomeScreen } from "./screnns/HomeScreen";
+import { BookDetailScreen } from "./screnns/BookDetailScreen";
+import { CartScreen } from "./screnns/CartScreen";
+import { BOOKS, CartItem, CART_ITEMS } from "./data";
 
 export default function App() {
-  const [cartCount, setCartCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<TabKey>("home");
+  const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
+  const [cartItems, setCartItems] = useState<CartItem[]>(CART_ITEMS);
 
-  // Bấm vào 1 cuốn sách -> demo thêm vào giỏ hàng (chỉ tăng số đếm, không đi sâu logic)
-  const handlePressBook = (id: number) => {
-    setCartCount((prev) => prev + 1);
+  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const selectedBook = BOOKS.find((b) => b.id === selectedBookId);
+
+  // Thêm 1 cuốn sách vào giỏ: nếu đã có thì +1 số lượng, chưa có thì thêm dòng mới
+  const handleAddToCart = (bookId: number) => {
+    setCartItems((prev) => {
+      const existing = prev.find((item) => item.book.id === bookId);
+      if (existing) {
+        return prev.map((item) =>
+          item.book.id === bookId ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      const book = BOOKS.find((b) => b.id === bookId);
+      if (!book) return prev;
+      return [...prev, { book, quantity: 1 }];
+    });
   };
 
+  // Đang xem chi tiết 1 cuốn sách -> hiển thị BookDetailScreen thay vì Home,
+  // ẩn TabBar để không lẫn với thanh "Thêm vào giỏ" cố định riêng của màn này.
+  if (selectedBook) {
+    return (
+      <SafeAreaView style={styles.root}>
+        <BookDetailScreen
+          book={selectedBook}
+          onBack={() => setSelectedBookId(null)}
+          onAddToCart={() => {
+            handleAddToCart(selectedBook.id);
+            setSelectedBookId(null);
+            setActiveTab("cart");
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <View style={styles.screen}>
-      {/* 1. Header cố định trên cùng — nằm NGOÀI ScrollView nên không bị cuộn theo */}
-      <Header />
+    <SafeAreaView style={styles.root}>
+      {/* flex:1 -> containing block cho FloatingCartButton (Home) và TabBar bên dưới */}
+      <View style={styles.body}>
+        {activeTab === "home" && (
+          <HomeScreen
+            cartCount={cartCount}
+            onPressBook={(id) => setSelectedBookId(id)}
+            onPressCart={() => setActiveTab("cart")}
+          />
+        )}
 
-      {/* 2. ScrollView chứa Chips + Grid — paddingBottom đủ lớn để
-             FloatingCartButton không che mất sách cuối cùng */}
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.chipsWrap}>
-          <CategoryChips />
-        </View>
+        {activeTab === "cart" && <CartScreen items={cartItems} />}
 
-        <BookGrid books={BOOKS} onPressBook={handlePressBook} />
-      </ScrollView>
+        {activeTab === "category" && <Placeholder text="Nội dung tab 'Danh mục' — xem Giờ 2 (Category Chips)." />}
+        {activeTab === "account" && <Placeholder text="Tài khoản (chưa yêu cầu trong đề bài)." />}
 
-      {/* 3. Nút giỏ nổi — NGOÀI ScrollView, luôn hiển thị đè lên nội dung cuộn */}
-      <FloatingCartButton count={cartCount} onPress={() => console.log("Mở giỏ hàng")} />
+        <TabBar active={activeTab} onChange={setActiveTab} />
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function Placeholder({ text }: { text: string }) {
+  return (
+    <View style={styles.placeholder}>
+      <Text style={styles.placeholderText}>{text}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F8FAFC" },
-  content: { padding: 16, paddingBottom: 100 },
-  chipsWrap: { marginBottom: 16 },
+  root: { flex: 1, backgroundColor: "#FFFFFF" },
+  body: { flex: 1 },
+  placeholder: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  placeholderText: { textAlign: "center", color: "#5B6B7F" },
 });
